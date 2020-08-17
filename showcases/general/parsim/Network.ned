@@ -35,7 +35,7 @@ module Subnetwork
             @display("p=243,38;is=s");
         }
         radioMedium: Ieee80211ScalarRadioMedium {
-            @display("p=349,38;is=s");
+            @display("p=349.11246,39.053257;is=s");
         }
         wiredHost1: StandardHost {
             @display("p=50,150");
@@ -79,38 +79,38 @@ module Subnetwork
 network ParsimNetwork
 {
     parameters:
-        @display("bgb=672,427");
+        @display("bgb=700,427");
     submodules:
-        visualizer: <default("")> like IIntegratedVisualizer if typename != "" {
-            @display("p=633,50;is=s");
-        }
+        //        visualizer: <default("")> like IIntegratedVisualizer if typename != "" {
+        //            @display("p=633,50;is=s");
+        //        }
         routerA: Router {
             **.networkConfiguratorModule = absPath("^.subnetworkA.configurator");
-            @display("p=200,100");
+            @display("p=250,100");
         }
         routerB: Router {
             **.networkConfiguratorModule = absPath("^.subnetworkB.configurator");
-            @display("p=200,300");
+            @display("p=250,300");
         }
         routerC: Router {
             **.networkConfiguratorModule = absPath("^.subnetworkC.configurator");
-            @display("p=400,300");
+            @display("p=450,300");
         }
         routerD: Router {
             **.networkConfiguratorModule = absPath("^.subnetworkD.configurator");
-            @display("p=400,100");
+            @display("p=450,100");
         }
         subnetworkA: Subnetwork {
-            @display("p=50,50");
+            @display("p=100,50");
         }
         subnetworkB: Subnetwork {
-            @display("p=50,350");
+            @display("p=100,350");
         }
         subnetworkD: Subnetwork {
-            @display("p=500,50");
+            @display("p=600,50");
         }
         subnetworkC: Subnetwork {
-            @display("p=500,350");
+            @display("p=600,350");
         }
     connections:
         routerA.pppg++ <--> PppChannel <--> routerD.pppg++;

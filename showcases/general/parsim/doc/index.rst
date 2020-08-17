@@ -84,11 +84,11 @@ To preserve causality of events, the partition simulations are not allowed to ad
 .. .. note:: Lookahead could be based on other metrics, TODO it can be implemented refer to the manual
 
 .. The logical processes can send sync messages to each other using either the Message Passing Interface (MPI), or named pipes.
-MPI needs installation and it needs to be enabled in ``configure.user`` in OMNeT++, but the processes can be run on different computers. Named pipes requires no installation, but processes can only be run on the same machine.
+   MPI needs installation and it needs to be enabled in ``configure.user`` in OMNeT++, but the processes can be run on different computers. Named pipes requires no installation, but processes can only be run on the same machine.
 
-The logical processes can send sync messages to each other using the Message Passing Interface (MPI). MPI needs installation and it needs to be enabled in ``configure.user`` in OMNeT++. The processes can be run on the same computer or on different computers. 
+The logical processes can send sync messages to each other using the Message Passing Interface (MPI). MPI needs installation and it needs to be enabled in ``configure.user`` in OMNeT++. The processes can be run on the same computer or on different computers.
 
-.. note:: An alternative communication method between partitions uses Named pipes. Named pipes requires no installation, but processes can only be run on the same machine, and its performance is worse than MPI's or even the sequential simulation. TODO its there because of historical reasons/for experimental purposes.
+.. note:: The logical processes can also send sync messages using Named pipes. Named pipes requires no installation, but processes can only be run on the same machine, and its performance is worse than MPI's or even the sequential simulation. TODO its there because of historical reasons/for experimental purposes.
 
 .. TODO mpi-t engedelyezni kell a configure-ban
 
@@ -133,7 +133,7 @@ Also, if the lookahead is too small, the partition simulations frequently stop t
 
 To enable parallel simulation, the ``parallel-simulation`` key needs to be set to ``true`` in the ini file.
 Also, the number of partitions has to be specified with the ``parsim-num-partitions`` parameter.
-The ``parsim-communications-class`` key selects which communication method to use; either ``cNamedPipeCommunications`` or ``cMPICommunications`` (For the other keys, check the `corresponding section <https://doc.omnetpp.org/omnetpp/manual/#sec:parallel-exec:configuration>`_ in the OMNeT++ manual).
+The ``parsim-communications-class`` key selects which communication method to use; either ``cMPICommunications`` or ``cNamedPipeCommunications`` (For the other keys, check the `corresponding section <https://doc.omnetpp.org/omnetpp/manual/#sec:parallel-exec:configuration>`_ in the OMNeT++ manual).
 
 .. `Parallel Simulation section <https://doc.omnetpp.org/omnetpp/manual/#cha:parallel-exec>`_
 
@@ -148,7 +148,7 @@ Modules can be assigned to partitions by specifying their partition id. For exam
    *.host{1..2}**.partition-id = 0
    *.host{3..4}**.partition-id = 1
 
-**TODO** ** shouldn't be needed
+.. **TODO** ** shouldn't be needed
 
 These keys assign hosts 1 and 2 to partition 0 and hosts 3 and 4 to partition 1.
 
@@ -169,13 +169,13 @@ These keys assign hosts 1 and 2 to partition 0 and hosts 3 and 4 to partition 1.
   - can use Cmdenv or Qtenv
   - in case of Qtenv, multiple instances are started (not sure its needed...the point is one can observe the parallel simulation from multiple instances of Qtenv)(where they can be started independently and observe that they dont advance if one of them is stopped)
 
-When using named pipes, the ``-p`` command line option selects which partition to run.
-
 .. It is often easier to put this in a script which runs all partitions **TODO**
 
 .. It takes multiple commands **TODO**
 
 When using MPI, the ``mpiexec`` command can be used from the command line. The command takes the number of partitions with the ``-n`` command line option, followed by the executable to run (in this case ``inet``).
+
+When using named pipes, the ``-p`` command line option selects which partition to run.
 
 .. For more information on parallel simulation, see the `Parallel Simulation section <https://doc.omnetpp.org/omnetpp/manual/#cha:parallel-exec>`_ in the OMNeT++ manual.
 
@@ -207,14 +207,27 @@ The Model
 The Network
 ~~~~~~~~~~~
 
-The example simulation features a mixed wired/wireless network with several LANs and a backbone of routers:
+.. The example simulation features a mixed wired/wireless network with several LANs and a backbone of routers:
 
-.. figure:: media/Network3.png
+The example simulation features four subnetworks connected to a backbone of routers:
+
+.. figure:: media/Network5.png
    :align: center
-   :width: 100%
+   :width: 80%
 
-The network contains two wired and two wireless LANs, each with two hosts connected by a switch or an access point.
-The LANs are connected to a backbone of routers.
+.. The network contains two wired and two wireless LANs, each with two hosts connected by a switch or an access point.
+   The LANs are connected to a backbone of routers.
+
+The subnetworks contain four wired hosts connected by a switch, and four wireless hosts connected by an access point:
+
+.. figure:: media/subnetwork2.png
+   :align: center
+   :width: 80%
+
+.. Each partition contains an :ned:`Ipv4NetworkConfigurator` module; wireless LANs also contain a :ned:`Ieee80211ScalarRadioMedium` module. The extra modules are needed due to the limitation of partitioning, i.e. no method calls to modules in other partitions.
+
+Each subnetwork contains an :ned:`Ipv4NetworkConfigurator` module and an :ned:`Ieee80211ScalarRadioMedium` module.
+Since each subnetwork is in a different partition, each of them needs these modules due to the limitation of partitioning, i.e. no method calls to modules in other partitions.
 
 .. **TODO** X kivesz a backbonebol
 
@@ -227,17 +240,17 @@ The LANs are connected to a backbone of routers.
    :end-at: }
    :language: ned
 
-Wired connections in LANs are ``Ethernet100``, the ones between the routers are ``PppChannel``, defined in the NED file:
+Wired connections in the subnetworks are ``Ethernet100``, the ones between the routers are ``PppChannel``, defined in the NED file:
 
 .. **TODO** not 'all wired connections'
 
 .. literalinclude:: ../Network.ned
    :start-at: Ethernet100
-   :end-before: ParSimNetworkBackbone
+   :end-before: Subnetwork
    :language: ned
 
 The connections extend :ned:`DatarateChannel`, and add a delay of 0.1 and 1 us (corresponding to about 20m and 200m long cables).
-Since only the connections between the routers cross partitions, the delay of these connections is the lookahead.
+Since only the connections between the routers cross partitions, the delay of these connections is the lookahead. **TODO** length
 
 .. **TODO** 100us is too much (100m -> 0.5us)
 
@@ -252,8 +265,7 @@ Since only the connections between the routers cross partitions, the delay of th
 Partitioning
 ~~~~~~~~~~~~
 
-The network is divided into four partitions. Each LAN, together with its corresponding switch/access point, and the router closest to it are assigned to a different partition.
-Each partition contains an :ned:`Ipv4NetworkConfigurator` module; wireless LANs also contain a :ned:`Ieee80211ScalarRadioMedium` module. The extra modules are needed due to the limitation of partitioning, i.e. no method calls to modules in other partitions.
+The network is divided into four partitions. Each subnetwork, and the router closest to it are assigned to a different partition:
 
 .. The network is divided into four partitions. Each LAN, together with its corresponding switch/access point, and the router closest to it are assigned to a different partition.
    Each partition contains an :ned:`Ipv4NetworkConfigurator` module; wireless LANs also contain a :ned:`Ieee80211ScalarRadioMedium` module.
@@ -265,7 +277,7 @@ Each partition contains an :ned:`Ipv4NetworkConfigurator` module; wireless LANs 
    a wireless nodeoik nem tudnak kommunikalni a masik particiban levo mediummal mert method call
    amelyik particioban nincs konfigurator ott nem lesznek konfiguralva
 
-Two of the hosts are configured to ping another two hosts (``host1`` pings ``host5``, ``host3`` pings ``host8``).
+Two of the hosts are configured to ping another two hosts (``host1`` pings ``host5``, ``host3`` pings ``host8``). **TODO** not here
 
 .. TODO config
 
@@ -276,12 +288,16 @@ Two of the hosts are configured to ping another two hosts (``host1`` pings ``hos
   - fcsMode DONE
   - parsim-communications-class = "cNamedPipeCommunications" DONE
 
-The modules are assigned to partitions, as follows:
+.. The modules are assigned to partitions, as follows:
 
 .. literalinclude:: ../omnetpp.ini
-   :start-at: radioMedium1**.partition-id
-   :end-at: configurator4**.partition-id
+   :start-at: *A**.partition-id
+   :end-at: *D**.partition-id
    :language: ini
+
+.. This assigns a subnetwork and the router it's connected to to the same partition.
+
+.. Each subnetwork and the router it's connected to is assigned to the same partition. **TODO** the submodules as well?
 
 .. Also, the priorities of all modules are specified. Setting priorities defines the order of events if multiple events in different partitions happen at the same simulation time. In this case, we assign the same priority to all modules as their partition number, like so:
 
@@ -311,11 +327,26 @@ The modules are assigned to partitions, as follows:
 
 .. **TODO** radioMedium
 
-The two wireless LANs have radio medium modules in their partitions. Wireless nodes can only use the radio medium module in their partition, so they can't send signals to nodes in another partition. This limitation needs to be considered when simulating interference; the interfering nodes need to be in the same partition. In this case, we don't want to simulate the interference between the two wireless LANs, so they can be in different partitions.
+.. The two wireless LANs have radio medium modules in their partitions.
+
+In each subnetwork (and thus, partition) there is a radio medium module.
+Wireless nodes can only use the radio medium module in their partition, so they can't send signals to nodes in another partition. This limitation needs to be considered when simulating interference; the interfering nodes need to be in the same partition. In this case, we don't want to simulate the interference between the two wireless LANs, so they can be in different partitions.
 
 The radio medium modules don't have the default name ``radioMedium``, so the module where hosts and access points belong to, needs to be specified:
 
-.. literalinclude:: ../omnetpp.ini
+**TODO** Radio modules look for radio medium module in the top level, so the module where hosts and access points belong to, needs to be specified: the one in the subnetwork
+
+Radio module
+
+**TODO** radioMediumModule = default("radioMedium"); // module path of the medium module where this radio communicates
+          so it looks for the module named radioMedium?
+
+.. literalinclude:: ../Network.ned
+   :start-at: radioMediumModule
+   :end-at: radioMediumModule
+   :language: ned
+
+.. .. literalinclude:: ../omnetpp.ini
    :start-at: radioMediumModule
    :end-at: AP2.**.radioMediumModule
    :language: ini
@@ -336,12 +367,12 @@ The access points have the same SSID by default. However, the configurator would
    :end-at: AP2
    :language: ini
 
-Similarly, we need to specify for each host and router to use the configurator module in its partition:
+Similarly, we need to specify for each host and router to use the configurator module in its partition. We specify this in the subnetwork's NED definition:
 
-.. literalinclude:: ../omnetpp.ini
+.. literalinclude:: ../Network.ned
    :start-at: networkConfiguratorModule
-   :end-at: router4.**.configurator.networkConfiguratorModule
-   :language: ini
+   :end-at: networkConfiguratorModule
+   :language: ned
 
 .. **TODO** rng config + sequential-parallel equivalency
 
