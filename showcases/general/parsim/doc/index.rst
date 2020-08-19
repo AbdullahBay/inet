@@ -218,7 +218,7 @@ The example simulation features four subnetworks connected to a backbone of rout
 .. The network contains two wired and two wireless LANs, each with two hosts connected by a switch or an access point.
    The LANs are connected to a backbone of routers.
 
-The subnetworks contain four wired hosts connected by a switch, and four wireless hosts connected by an access point:
+The subnetwork compound module contains four wired hosts connected by a switch, and four wireless hosts connected by an access point:
 
 .. figure:: media/subnetwork2.png
    :align: center
@@ -277,8 +277,6 @@ The network is divided into four partitions. Each subnetwork, and the router clo
    a wireless nodeoik nem tudnak kommunikalni a masik particiban levo mediummal mert method call
    amelyik particioban nincs konfigurator ott nem lesznek konfiguralva
 
-Two of the hosts are configured to ping another two hosts (``host1`` pings ``host5``, ``host3`` pings ``host8``). **TODO** not here
-
 .. TODO config
 
   - priority DONE
@@ -330,20 +328,23 @@ Two of the hosts are configured to ping another two hosts (``host1`` pings ``hos
 .. The two wireless LANs have radio medium modules in their partitions.
 
 In each subnetwork (and thus, partition) there is a radio medium module.
-Wireless nodes can only use the radio medium module in their partition, so they can't send signals to nodes in another partition. This limitation needs to be considered when simulating interference; the interfering nodes need to be in the same partition. In this case, we don't want to simulate the interference between the two wireless LANs, so they can be in different partitions.
+Wireless nodes can only use the radio medium module in their partition, so they can't send signals to nodes in another partition. This limitation needs to be considered when simulating interference; the interfering nodes need to be in the same partition. In this case, we don't want to simulate the interference between subnetworks, so they can be in different partitions.
 
-The radio medium modules don't have the default name ``radioMedium``, so the module where hosts and access points belong to, needs to be specified:
+.. The radio medium modules don't have the default name ``radioMedium``, so the module where hosts and access points belong to, needs to be specified:
 
-**TODO** Radio modules look for radio medium module in the top level, so the module where hosts and access points belong to, needs to be specified: the one in the subnetwork
+By default, radios look for the radio medium module named ``radioMedium`` in the top level, so we configure them to use the radio medium module in the subnetwork. Similarly, we need to specify for each host and router to use the configurator module in its partition, the one in the subnetwork. We specify these in the subnetwork's NED definition:
 
-Radio module
+.. so the module where hosts and access points belong to needs to be specified.
+   We configure them in the NED file to use the radio medium module in the subnetwork:
 
-**TODO** radioMediumModule = default("radioMedium"); // module path of the medium module where this radio communicates
+.. Radio module
+
+.. **TODO** radioMediumModule = default("radioMedium"); // module path of the medium module where this radio communicates
           so it looks for the module named radioMedium?
 
 .. literalinclude:: ../Network.ned
-   :start-at: radioMediumModule
-   :end-at: radioMediumModule
+   :start-at: Subnetwork
+   :end-at: networkConfiguratorModule
    :language: ned
 
 .. .. literalinclude:: ../omnetpp.ini
@@ -353,11 +354,18 @@ Radio module
 
 .. **TODO** ssid -> ne higgye azt hogy egy networkbe tartoznak
 
-The access points have the same SSID by default. However, the configurator would put all wireless hosts and access points in the same wireless network, so the SSID's of the two wireless LANs need to be unique:
+.. .. literalinclude:: ../Network.ned
+   :start-at: networkConfiguratorModule
+   :end-at: networkConfiguratorModule
+   :language: ned
+
+**TODO** is this still needed?
+
+All access points in the network/in the subnetworks have the same SSID by default. However, the configurator would put all wireless hosts and access points in the same wireless network, so the SSID's of the subnetworks need to be unique:
 
 .. literalinclude:: ../omnetpp.ini
-   :start-at: AP1.**.ssid
-   :end-at: host{5..6}
+   :start-at: subnetworkA.**.ssid
+   :end-at: subnetworkD.**.defaultSsid
    :language: ini
 
 .. **TODO** rewrite? miert kell kulon medium
@@ -366,13 +374,6 @@ The access points have the same SSID by default. However, the configurator would
    :start-at: radioMedium1
    :end-at: AP2
    :language: ini
-
-Similarly, we need to specify for each host and router to use the configurator module in its partition. We specify this in the subnetwork's NED definition:
-
-.. literalinclude:: ../Network.ned
-   :start-at: networkConfiguratorModule
-   :end-at: networkConfiguratorModule
-   :language: ned
 
 .. **TODO** rng config + sequential-parallel equivalency
 
@@ -397,33 +398,50 @@ We want to make sure that race conditions don't cause incorrect results, so we c
 
   -> elég hosszu eleg bonyolult sim-ben ugyan az az eredmenyt ki tudjuk hozni, akkor biztosak lehetünk hogy nincs baj a race conditionbol
 
-To do that, we configure each partition to have an own random number generator, which the modules in that partition will use, regardless of running the simulation sequentially or parallelly. Also, the seeds need to be set **TODO** why
-
-To do that, we configure the simulation to have four random number generators.
-
-so
-
-- there are four rngs
-- in the sequential case, there are 4 rngs total
-- in the parsim case, each partition has 4 rngs
-- we set the partitions to use just one rng (same index as partition id)
-- also set the rngs to use different seeds (same index as partition id)
-- so in the sequential case, the partitions use one of the four rngs with the same seed as the partition id
-- in the parsim case, a partition uses just one of the four generators, the one which belongs to its partition
-- still don't understand why they need to have different seeds -> turns out we don't
-
--modules use the rng the same as the partition id
--the partitions use one of the 4
-
-lehetne sequential, and parallel and common ini file
-(van kulon General configjuk)
+To do that, we configure each partition to have an own random number generator, which the modules in that partition will use, regardless of running the simulation sequentially or parallelly:
 
 .. literalinclude:: ../omnetpp.ini
+   :start-at: num-rngs = 4
+   :end-at: *D**
+   :language: ini
+
+Each RNG is configured to use the partition ID as seed. The seeds need to be configured for the parallel and sequential cases separately:
+
+.. literalinclude:: ../omnetpp.ini
+   :start-at: rng seed parameters for parsim
+   :end-at: seed-3-mt = 3
+   :language: ini
+
+Note that the ``num-rngs`` parameter pertains to each simulation, whether its the sequential or one of the partition simulations.
+Thus, each partition simulation has four RNGs, although it needs and uses only one of them/the one with the partition ID as index.
+
+.. Also, the seeds need to be set **TODO** why
+
+   To do that, we configure the simulation to have four random number generators.
+
+  so
+
+  - there are four rngs
+  - in the sequential case, there are 4 rngs total
+  - in the parsim case, each partition has 4 rngs
+  - we set the partitions to use just one rng (same index as partition id)
+  - also set the rngs to use different seeds (same index as partition id)
+  - so in the sequential case, the partitions use one of the four rngs with the same seed as the partition id
+  - in the parsim case, a partition uses just one of the four generators, the one which belongs to its partition
+  - still don't understand why they need to have different seeds -> turns out we don't
+
+  -modules use the rng the same as the partition id
+  -the partitions use one of the 4
+
+.. lehetne sequential, and parallel and common ini file
+   (van kulon General configjuk)
+
+.. .. literalinclude:: ../omnetpp.ini
    :start-at: num-rngs
    :end-at: num-rngs
    :language: ini
 
-.. literalinclude:: ../omnetpp.ini
+.. .. literalinclude:: ../omnetpp.ini
    :start-at: rng seed
    :end-at: seed-3-mt =
    :language: ini
@@ -458,16 +476,16 @@ by the configurator to an xml file, and use that file as the configuration for e
 .. To do this, we need to run the simulation sequentially and with the configurator set to add static routes.
 
 All four configurator's would create the same xml file, so we just dump one of them.
-The ``GenerateConfiguratorConfig`` configuration in omnetpp.ini can be used for this purpose:
+The ``GenerateNetworkConfiguration`` configuration in omnetpp.ini can be used for this purpose:
 
 .. **TODO** RoutesAndAddresses.xml/AddressesAndRoutes.xml
 
 .. literalinclude:: ../omnetpp.ini
-   :start-at: GenerateConfiguratorConfig
+   :start-at: GenerateNetworkConfiguration
    :end-at: Routes
    :language: ini
 
-The ``AddressesAndRoutes.xml`` file is used by all network configurators in the parallel simulation:
+The ``network-configuration.xml`` file is used by all network configurators in the parallel simulation:
 
 .. TODO
 
@@ -476,9 +494,9 @@ The ``AddressesAndRoutes.xml`` file is used by all network configurators in the 
    :end-at: configurator*
    :language: ini
 
-To generate ``AddressesAndRoutes.xml``, run the ``generateConfiguratorConfig`` script in the showcase's folder. The script runs the simulation sequentially:
+To generate ``network-configuration.xml``, run the ``generate-network-configuration`` script in the showcase's folder. The script runs the simulation sequentially:
 
-.. literalinclude:: ../generateConfiguratorConfig
+.. literalinclude:: ../generate-network-configuration
    :language: bash
 
 .. .. code-block:: bash
@@ -554,6 +572,23 @@ Now the configurators set the IP addresses and routes for the network nodes in t
    .. literalinclude:: ../configurator1backbone.xml
       :language: xml
 
+Traffic
+~~~~~~~
+
+.. Two of the hosts are configured to ping another two hosts (``host1`` pings ``host5``, ``host3`` pings ``host8``).
+
+.. **TODO** TCP stuff
+
+.. We set up high local traffic in the subnetworks
+
+In the subnetworks, we set up high local traffic, and sporadic cross-partition traffic.
+
+In each partition, ``wiredHost1`` pings ``wirelessHost1`` in the next subnetwork (A -> B -> C -> D -> A); similarly, ``wirelessHost1`` pings the next subnetwork's ``wiredHost1``. The frequency of the ping messages is the default 1s.
+
+.. Each wired host in each subnetwork sends a TCP stream to another in the same subnetwork.
+
+Each wired host is configured to send a TCP stream to the next one in the same subnetwork (1 -> 2 -> 3 -> 4 -> 1); wireless hosts are configured to do the same. This generates substantial local traffic, which is needed for good parallel performance gains.
+
 Running the Simulations
 -----------------------
 
@@ -571,14 +606,14 @@ Running the Simulations
   - there are placeholder modules for those modules in the network which don't belong to the particular partition (they are empty)
   - but the messages going between partitions can be observed
 
-Two shell scripts in the showcase's folder can be used to run the parallel simulation. The ``runparsim`` script uses the named pipes communication method:
-
-.. literalinclude:: ../runparsim
-   :language: bash
-
-The ``runparsim-mpi`` script uses MPI:
+Two shell scripts in the showcase's folder can be used to run the parallel simulation. The ``runparsim-mpi`` script uses MPI:
 
 .. literalinclude:: ../runparsim-mpi
+   :language: bash
+
+The ``runparsim`` script uses the named pipes communication method:
+
+.. literalinclude:: ../runparsim
    :language: bash
 
 .. **TODO** does mpi need the parsim-num-partitions ?
@@ -589,11 +624,11 @@ To run the simulations, execute one of the scripts from the command line. By def
 
 .. code-block:: bash
 
-   $ ./runparsim
+   $ ./runparsim-mpi
 
 .. code-block:: bash
 
-   $ ./runparsim-mpi
+   $ ./runparsim
 
 In this case, four Qtenv windows open. Click the run simulation button in all of them to start the parallel simulation. The simulation can only progress if all partition simulations are running; the partition simulations stop and wait after a lookahead duration until all of them are started:
 
@@ -603,11 +638,11 @@ To start the simulations in Cmdenv, append ``-u Cmdenv`` to the command:
 
 .. code-block:: bash
 
-   $ ./runparsim -u Cmdenv
+   $ ./runparsim-mpi -u Cmdenv
 
 .. code-block:: bash
 
-   $ ./runparsim-mpi -u Cmdenv
+   $ ./runparsim -u Cmdenv
 
 Results
 -------
