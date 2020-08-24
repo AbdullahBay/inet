@@ -249,8 +249,8 @@ Wired connections in the subnetworks are ``Ethernet100``, the ones between the r
    :end-before: Subnetwork
    :language: ned
 
-The connections extend :ned:`DatarateChannel`, and add a delay of 0.1 and 1 us (corresponding to about 20m and 200m long cables).
-Since only the connections between the routers cross partitions, the delay of these connections is the lookahead. **TODO** length
+The connections extend :ned:`DatarateChannel`, and add a delay of 0.1 and 1 us (corresponding to about 20m and 2000m long cables).
+Since only the connections between the routers cross partitions, the delay of these connections is the lookahead.
 
 .. **TODO** 100us is too much (100m -> 0.5us)
 
@@ -361,7 +361,7 @@ By default, radios look for the radio medium module named ``radioMedium`` in the
 
 **TODO** is this still needed?
 
-All access points in the network/in the subnetworks have the same SSID by default. However, the configurator would put all wireless hosts and access points in the same wireless network, so the SSID's of the subnetworks need to be unique:
+All access points in the network have the same SSID by default. However, the configurator would put all wireless hosts and access points in the same wireless network, so the SSID's of the subnetworks need to be unique:
 
 .. literalinclude:: ../omnetpp.ini
    :start-at: subnetworkA.**.ssid
@@ -476,7 +476,7 @@ by the configurator to an xml file, and use that file as the configuration for e
 .. To do this, we need to run the simulation sequentially and with the configurator set to add static routes.
 
 All four configurator's would create the same xml file, so we just dump one of them.
-The ``GenerateNetworkConfiguration`` configuration in omnetpp.ini can be used for this purpose:
+The ``GenerateNetworkConfiguration`` config in omnetpp.ini can be used for this purpose:
 
 .. **TODO** RoutesAndAddresses.xml/AddressesAndRoutes.xml
 
@@ -651,6 +651,8 @@ Here is a video of running the simulations in Cmdenv:
 
 TODO -> need
 
+The outputs of the four simulations are mixed, but the messages for successfully received ping replies in ``host1`` and ``host3`` are observable.
+
 .. **TODO** osszehasonlitas a sequential es a nem sequential kozott
    -> lehet hogy a parsim = true a scriptben kene
    -> az eredmenyeknek exact matchnek kene lennie
@@ -658,19 +660,19 @@ TODO -> need
 .. -> a 4 parallel ping log es a sequential -> diff a 2 -> a sequential csak extra sorokat tartalmaz mert interleave-elodnek
    -> statisztikak -> rtt felrajzol -> exact match -> kivon a 2 es 0nak kell lennie
 
-We compare the parallel and sequential simulations by plotting the difference between the round-trip-time of the same ping messages in both (only for ``host3``, as ``host1``'s ping messages only use wired links, and don't draw any random numbers).
+.. We compare the parallel and sequential simulations by plotting the difference between the round-trip-time of the same ping messages in both (only for ``host3``, as ``host1``'s ping messages only use wired links, and don't draw any random numbers).
 
-.. figure:: media/rtt.svg
+We compare the parallel and sequential simulations by plotting the ping round-trip time of ``wiredHost1`` in ``subnetworkA``:
+
+.. figure:: media/rtt.png
    :align: center
 
-**TODO** ez igy meaningless -> inkabb egymast fedjek
+.. **TODO** ez igy meaningless -> inkabb egymast fedjek
 
 The values match exactly.
 
 **TODO** -> lemer hogy mennyi ideig fut -> on such and such computer this is the result
 -> legalabb legyen 2x gyorsabb
-
-The outputs of the four simulations are mixed, but the messages for successfully received ping replies in ``host1`` and ``host3`` are observable.
 
 .. When the simulations are run in Qtenv, there are placeholder modules for those modules in the network which don't belong to the particular partition (they are empty)
    - but the messages going between partitions can be observed
