@@ -36,11 +36,11 @@ ahead of the others in simulation time. To this end, partition simulations have 
 by sending each other sync messages, which contain the current simulation time of the partition
 simulation and how far other partition simulations can safely advance, called lookahead.
 
-The logical processes can send sync messages to each other using the Message Passing Interface (MPI).
+The partition simulations can send sync messages to each other using the Message Passing Interface (MPI).
 MPI needs installation and it needs to be enabled in ``configure.user`` in OMNeT++. The processes can
 be run on the same computer or on different computers.
 
-.. note:: The logical processes can also send sync messages using Named pipes. Named pipes requires no installation, but processes can only be run on the same machine, and its performance is worse than MPI's or even the sequential simulation. TODO its there because of historical reasons/for experimental purposes.
+.. note:: The partition simulations can also send sync messages using Named pipes. Named pipes requires no installation, but processes can only be run on the same machine, and its performance is worse than MPI's.
 
 Currently, the lookahead is based on link delays. In INET, the most convenient partitioning is
 on the network level; thus partitions are crossed by wired links between network nodes, the delay
@@ -135,7 +135,7 @@ We specify these in the subnetwork's NED definition:
    :end-at: networkConfiguratorModule
    :language: ned
 
-**TODO** is this still needed?
+.. **TODO** is this still needed?
 
 All access points in the network have the same SSID by default. However, the configurator would
 put all wireless hosts and access points in the same wireless network, so the SSID's of the
@@ -272,19 +272,29 @@ Here is a video of running the simulations in Cmdenv:
 
 TODO -> need
 
-The outputs of the four simulations are mixed, but the messages for successfully
-received ping replies in ``host1`` and ``host3`` are observable.
+TODO try with a faster computer
 
-We compare the parallel and sequential simulations by plotting the ping round-trip
+The outputs of the four simulations are mixed, but the messages for successfully
+received ping replies are observable.
+
+TODO qtenv 4x video rovid...
+van egy ilyen patch hogy a skeleton moduleok mashogy jelennek meg...halvanyabb...ask andras
+
+We compared the parallel and sequential simulations by plotting the ping round-trip
 time of ``wiredHost1`` in ``subnetworkA``:
 
 .. figure:: media/rtt.png
    :align: center
 
-The values match exactly.
+The values match exactly, for the other hosts as well.
 
-**TODO** -> lemer hogy mennyi ideig fut -> on such and such computer this is the result
--> legalabb legyen 2x gyorsabb
+.. TODO the other hosts match as well
+
+.. **TODO** -> lemer hogy mennyi ideig fut -> on such and such computer this is the result
+   -> legalabb legyen 2x gyorsabb
+   -> Ryzen 7 4800 32Gb (8 core)(4 used)
+
+We measured the run time of the sequential and the parallel simulation. Using MPI, the simulation ran about 2.5 times faster than the sequential simulation on a Ryzen 7 4800HS 8-core CPU (4 cores were used) and 32 GB RAM.
 
 .. note:: When the simulations are run in Qtenv, all network nodes are present in all Qtenv windows. However, Qtenv uses placeholder modules for those which are not in the partition the Qtenv instance is running. These placeholder modules are empty. However, one can still observe the messages going between partitions in the Qtenv packet log.
 
