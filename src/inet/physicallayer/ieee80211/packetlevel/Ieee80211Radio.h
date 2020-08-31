@@ -42,7 +42,7 @@ class INET_API Ieee80211Radio : public FlatRadioBase
 
   protected:
     CrcMode crcMode = CRC_MODE_UNDEFINED;
-
+    int ksasa =0;
   protected:
     virtual void initialize(int stage) override;
 
