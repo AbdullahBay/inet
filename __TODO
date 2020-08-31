@@ -1,3 +1,18 @@
+reformat source code
+remove core team members as authors from comments?
+replace core team members in copyright holders?
+create release script
+
+Ethernet FCS progress report at the correct moment of time
+
+Parallel simulation support
+ - compute earliest input/output time (function?!) for each gate in the network
+   - earliest output time (EOT) per gate starts from the earliest event in the module (using virtual method in modules with default implementation)
+   - also take into account C++ methods calls when propagating EIT/EOT
+   - earliest input time (EIT) per gate is computed from neighbors' earliest output time per gate + channel delay
+   - refine times by propagating EOT to EIT until there's no change
+   - neighbor partitions' EIT can be easily found
+
 INET 4.3 release TODO items:
 
 1. Clock model

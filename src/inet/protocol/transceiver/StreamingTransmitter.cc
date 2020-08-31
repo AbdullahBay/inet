@@ -65,9 +65,9 @@ void StreamingTransmitter::startTx(Packet *packet)
 
 void StreamingTransmitter::endTx()
 {
-    emit(transmissionEndedSignal, txSignal);
     auto packet = check_and_cast<Packet *>(txSignal->getEncapsulatedPacket());
     EV_INFO << "Ending transmission" << EV_FIELD(packet, *packet) << EV_FIELD(datarate) << EV_ENDL;
+    emit(transmissionEndedSignal, txSignal);
     producer->handlePushPacketProcessed(packet, inputGate->getPathStartGate(), true);
     sendPacketEnd(txSignal);
     txSignal = nullptr;

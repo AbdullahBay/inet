@@ -39,7 +39,7 @@ void DestreamingReceiver::handleMessageWhenUp(cMessage *message)
         else {
             auto packet = check_and_cast<Packet *>(signal->getEncapsulatedPacket());
             simtime_t timePosition = signal->getDuration() - signal->getRemainingDuration();
-            b position = packet->getTotalLength() * timePosition.dbl() / signal->getDuration().dbl();
+            b position = packet->getTotalLength() * (timePosition.dbl() / signal->getDuration().dbl());
             receivePacketProgress(signal, inputGate, datarate, position, timePosition, b(0), 0);
         }
     }

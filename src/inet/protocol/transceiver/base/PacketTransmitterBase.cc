@@ -86,6 +86,7 @@ Signal *PacketTransmitterBase::encodePacket(Packet *packet) const
 
 void PacketTransmitterBase::sendPacketStart(Signal *signal)
 {
+    ASSERT(signal->getOrigPacketId() == -1);
     EV_INFO << "Sending signal start to channel" << EV_FIELD(signal, *signal) << EV_ENDL;
     send(signal, SendOptions().duration(signal->getDuration()), outputGate);
 }

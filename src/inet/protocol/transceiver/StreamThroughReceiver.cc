@@ -47,17 +47,6 @@ void StreamThroughReceiver::handleMessageWhenUp(cMessage *message)
         StreamingReceiverBase::handleMessage(message);
 }
 
-void StreamThroughReceiver::handleMessageWhenDown(cMessage *msg)
-{
-    if (!msg->isSelfMessage()) {
-        // received on input gate from another network node
-        EV << "Interface is turned off, dropping message (" << msg->getClassName() << ")" << msg->getName() << "\n";
-        delete msg;
-    }
-    else
-        OperationalMixin::handleMessageWhenDown(msg);
-}
-
 void StreamThroughReceiver::receivePacketStart(cPacket *cpacket, cGate *gate, bps datarate)
 {
     ASSERT(rxSignal == nullptr);
@@ -72,9 +61,10 @@ void StreamThroughReceiver::receivePacketStart(cPacket *cpacket, cGate *gate, bp
 void StreamThroughReceiver::receivePacketProgress(cPacket *cpacket, cGate *gate, bps datarate, b position, simtime_t timePosition, b extraProcessableLength, simtime_t extraProcessableDuration)
 {
     take(cpacket);
+    auto signal = check_and_cast<Signal *>(cpacket);
     if (rxSignal) {
         delete rxSignal;
-        rxSignal = check_and_cast<Signal *>(cpacket);
+        rxSignal = signal;
     }
     else {
         EV_WARN << "Dropping signal progress because signal start was not received" << EV_FIELD(signal, *signal) << EV_ENDL;

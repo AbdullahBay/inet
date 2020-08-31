@@ -33,6 +33,7 @@ void PreemptableStreamer::initialize(int stage)
 {
     PacketProcessorBase::initialize(stage);
     if (stage == INITSTAGE_LOCAL) {
+        datarate = bps(par("datarate"));
         minPacketLength = b(par("minPacketLength"));
         roundingLength = b(par("roundingLength"));
         inputGate = gate("in");
@@ -69,6 +70,7 @@ void PreemptableStreamer::pushPacket(Packet *packet, cGate *gate)
     Enter_Method("pushPacket");
     ASSERT(!isStreaming());
     take(packet);
+    streamDatarate = datarate;
     streamedPacket = packet->dup();
     streamedPacket->setOrigPacketId(packet->getId());
     EV_INFO << "Starting streaming" << EV_FIELD(packet, *packet) << EV_ENDL;
@@ -107,6 +109,7 @@ Packet *PreemptableStreamer::canPullPacket(cGate *gate) const
 Packet *PreemptableStreamer::pullPacketStart(cGate *gate, bps datarate)
 {
     Enter_Method("pullPacketStart");
+    streamDatarate = datarate;
     auto packet = remainingPacket == nullptr ? provider->pullPacket(inputGate->getPathStartGate()) : remainingPacket;
     remainingPacket = nullptr;
     auto fragmentTag = packet->findTagForUpdate<FragmentTag>();
@@ -130,7 +133,7 @@ Packet *PreemptableStreamer::pullPacketEnd(cGate *gate)
     Enter_Method("pullPacketEnd");
     EV_INFO << "Ending streaming" << EV_FIELD(packet, *streamedPacket) << EV_ENDL;
     auto packet = streamedPacket;
-    b pulledLength = datarate * s((simTime() - streamStart).dbl());
+    b pulledLength = streamDatarate * s((simTime() - streamStart).dbl());
     b preemptedLength = roundingLength * ((pulledLength + roundingLength - b(1)) / roundingLength);
     if (preemptedLength < minPacketLength)
         preemptedLength = minPacketLength;

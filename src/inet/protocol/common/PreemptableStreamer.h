@@ -41,6 +41,7 @@ class INET_API PreemptableStreamer : public PacketProcessorBase, public virtual 
     IActivePacketSink *collector = nullptr;
 
     simtime_t streamStart;
+    bps streamDatarate = bps(NaN);
     Packet *streamedPacket = nullptr;
     Packet *remainingPacket = nullptr;
 

@@ -37,10 +37,10 @@ void StreamThroughTransmitter::handleCrashOperation(LifecycleOperation *operatio
 
 void StreamThroughTransmitter::startTx(Packet *packet)
 {
+    ASSERT(txSignal == nullptr);
     datarate = bps(*dataratePar);
     EV_INFO << "Starting transmission" << EV_FIELD(packet, *packet) << EV_FIELD(datarate) << EV_ENDL;
     txStartTime = getClockTime();
-    ASSERT(txSignal == nullptr);
     auto signal = encodePacket(packet);
     txSignal = signal->dup();
     txSignal->setOrigPacketId(signal->getId());
@@ -84,6 +84,7 @@ void StreamThroughTransmitter::pushPacketStart(Packet *packet, cGate *gate, bps 
     Enter_Method("pushPacketStart");
     take(packet);
     startTx(packet);
+    // TODO: check if datarate is higher than txDatarate
 }
 
 void StreamThroughTransmitter::pushPacketEnd(Packet *packet, cGate *gate)
@@ -93,7 +94,14 @@ void StreamThroughTransmitter::pushPacketEnd(Packet *packet, cGate *gate)
     auto signal = encodePacket(packet);
     signal->setOrigPacketId(txSignal->getOrigPacketId());
     delete txSignal;
-    txSignal = signal;
+    txSignal = signal->dup();
+    // TODO: check if the last sent packet is the same as the current, because than no progress is required
+    clocktime_t timePosition = getClockTime() - txStartTime;
+    b bitPosition = b(std::floor(datarate.get() * timePosition.dbl()));
+    if (bitPosition != packet->getTotalLength())
+        sendPacketProgress(signal, bitPosition, timePosition);
+    else
+        delete signal;
     cancelClockEvent(txEndTimer);
     scheduleTxEndTimer(txSignal);
 }
