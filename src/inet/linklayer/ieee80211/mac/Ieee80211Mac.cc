@@ -83,6 +83,9 @@ void Ieee80211Mac::initialize(int stage)
         hcf = check_and_cast_nullable<Hcf *>(getSubmodule("hcf"));
         if (mib->qos && !hcf)
             throw cRuntimeError("Missing hcf module, required for QoS");
+
+        conf = new Ieee80211ConfigureRadioCommand();
+        conf->setChannelNumber(5); //TODO: get from real data
     }
 }
 
@@ -368,6 +371,21 @@ void Ieee80211Mac::sendDownFrame(Packet *frame)
     configureRadioMode(IRadio::RADIO_MODE_TRANSMITTER);
     frame->addTagIfAbsent<PacketProtocolTag>()->setProtocol(&Protocol::ieee80211Mac);
     sendDown(frame);
+
+    gonderilensayisi++;
+    gonderilensayisi++;
+
+    EV<< "abdullah paket gonderdi "<<    gonderilensayisi <<"\n";
+    if(gonderilensayisi%200 == 0)
+    {
+        int channel = conf->getChannelNumber()==5?0:5;
+        conf->setChannelNumber(channel);
+        auto request = new Request("configureRadioMode", RADIO_C_CONFIGURE);
+        request->setControlInfo(conf);
+        sendDown(request);
+        EV<< "abdullah kanal degisti: "<< channel <<"\n";
+    }
+
 }
 
 void Ieee80211Mac::sendDownPendingRadioConfigMsg()
