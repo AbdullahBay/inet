@@ -373,19 +373,18 @@ void Ieee80211Mac::sendDownFrame(Packet *frame)
     sendDown(frame);
 
     gonderilensayisi++;
-    gonderilensayisi++;
-
     EV<< "abdullah paket gonderdi "<<    gonderilensayisi <<"\n";
-    if(gonderilensayisi%200 == 0)
+    if(gonderilensayisi%199 == 0)
     {
         int channel = conf->getChannelNumber()==5?0:5;
         conf->setChannelNumber(channel);
         auto request = new Request("configureRadioMode", RADIO_C_CONFIGURE);
         request->setControlInfo(conf);
+        take(request);
         sendDown(request);
         EV<< "abdullah kanal degisti: "<< channel <<"\n";
     }
-
+    gonderilensayisi++;
 }
 
 void Ieee80211Mac::sendDownPendingRadioConfigMsg()

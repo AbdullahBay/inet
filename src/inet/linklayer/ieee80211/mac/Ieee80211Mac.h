@@ -66,6 +66,7 @@ class INET_API Ieee80211Mac : public MacProtocolBase
 
     // The last change channel message received and not yet sent to the physical layer, or NULL.
     cMessage *pendingRadioConfigMsg = nullptr;
+    int gonderilensayisi=0;
 
   protected:
     virtual int numInitStages() const override {return NUM_INIT_STAGES;}
