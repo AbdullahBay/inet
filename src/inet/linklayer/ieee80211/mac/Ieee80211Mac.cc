@@ -86,6 +86,8 @@ void Ieee80211Mac::initialize(int stage)
 
         conf = new Ieee80211ConfigureRadioCommand();
         conf->setChannelNumber(5); //TODO: get from real data
+        cMessage *msg = new cMessage("benim mesaj");
+        scheduleAt(simTime()+10.0, msg);
     }
 }
 
@@ -147,7 +149,15 @@ void Ieee80211Mac::handleMessageWhenUp(cMessage *message)
 
 void Ieee80211Mac::handleSelfMessage(cMessage *msg)
 {
-    ASSERT(false);
+    EV<< "Self message geldi abdullahsalih."<<msg->getName();
+    int channel = conf->getChannelNumber()==5?0:5;
+    conf->setChannelNumber(channel);
+    auto request = new Request("configureRadioMode", RADIO_C_CONFIGURE);
+    request->setControlInfo(conf);
+    take(request);
+    sendDown(request);
+    EV<< "abdullah kanal degisti: " << channel <<"\n";
+    //ASSERT(false);
 }
 
 void Ieee80211Mac::handleMgmtPacket(Packet *packet)
@@ -372,19 +382,21 @@ void Ieee80211Mac::sendDownFrame(Packet *frame)
     frame->addTagIfAbsent<PacketProtocolTag>()->setProtocol(&Protocol::ieee80211Mac);
     sendDown(frame);
 
-    gonderilensayisi++;
-    EV<< "abdullah paket gonderdi "<<    gonderilensayisi <<"\n";
-    if(gonderilensayisi%199 == 0)
-    {
-        int channel = conf->getChannelNumber()==5?0:5;
-        conf->setChannelNumber(channel);
-        auto request = new Request("configureRadioMode", RADIO_C_CONFIGURE);
-        request->setControlInfo(conf);
-        take(request);
-        sendDown(request);
-        EV<< "abdullah kanal degisti: "<< channel <<"\n";
-    }
-    gonderilensayisi++;
+//    gonderilensayisi++;
+//    EV<< "abdullah paket gonderdi "<<    gonderilensayisi <<"\n";
+//    if(gonderilensayisi%199 == 0)
+//    {
+////        int channel = conf->getChannelNumber()==5?0:5;
+////        conf->setChannelNumber(channel);
+////        auto request = new Request("configureRadioMode", RADIO_C_CONFIGURE);
+////        request->setControlInfo(conf);
+////        take(request);
+////        sendDown(request);
+//        cMessage *msg = new cMessage("benim mesaj");
+//        scheduleAt(simTime()+10.0, msg);
+//        EV<< "abdullah kanal degisti: " <<"\n";
+//    }
+//    gonderilensayisi++;
 }
 
 void Ieee80211Mac::sendDownPendingRadioConfigMsg()
