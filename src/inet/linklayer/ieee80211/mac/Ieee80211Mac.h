@@ -48,7 +48,7 @@ class INET_API Ieee80211Mac : public MacProtocolBase
 {
   protected:
     FcsMode fcsMode;
-    physicallayer::Ieee80211ConfigureRadioCommand *conf =  nullptr;
+
     Ieee80211Mib *mib = nullptr;
     IIeee80211Llc *llc = nullptr;
     IDs *ds = nullptr;
