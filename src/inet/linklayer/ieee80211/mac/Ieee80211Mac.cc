@@ -156,7 +156,8 @@ void Ieee80211Mac::handleSelfMessage(cMessage *msg)
     EV<< "Self message geldi: "<<msg->getName();
 
     Ieee80211Radio * myradio = check_and_cast<Ieee80211Radio *>(this->radio);
-    int channel = (int)myradio->par("channelNumber");
+    Ieee80211TransmitterBase *ieee80211Transmitter = const_cast<Ieee80211TransmitterBase *>(check_and_cast<const Ieee80211TransmitterBase *>(myradio->getTransmitter()));
+    int channel = ieee80211Transmitter->channel->getChannelNumber();
     EV<<"Suanki durum: "<< channel<<"\n";
     if(channel==5)
         channel=0;
