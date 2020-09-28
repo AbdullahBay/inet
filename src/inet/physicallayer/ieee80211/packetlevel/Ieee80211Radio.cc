@@ -85,7 +85,10 @@ void Ieee80211Radio::handleUpperCommand(cMessage *message)
                 setChannel(channel);
             int newChannelNumber = configureCommand->getChannelNumber();
             if (newChannelNumber != -1)
+            {
                 setChannelNumber(newChannelNumber);
+                EV<< "salih kanal degisti: "<< newChannelNumber <<"\n";
+            }
         }
     }
     FlatRadioBase::handleUpperCommand(message);

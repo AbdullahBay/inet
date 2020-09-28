@@ -34,6 +34,7 @@ class INET_API Ieee80211TransmitterBase : public FlatTransmitterBase
     const Ieee80211ModeSet *modeSet;
     const IIeee80211Mode *mode;
     const IIeee80211Band *band;
+  public:
     const Ieee80211Channel *channel;
 
   protected:

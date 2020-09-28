@@ -34,6 +34,7 @@
 #include "inet/networklayer/contract/IInterfaceTable.h"
 #include "inet/physicallayer/ieee80211/packetlevel/Ieee80211ControlInfo_m.h"
 #include "inet/physicallayer/ieee80211/packetlevel/Ieee80211Tag_m.h"
+#include "inet/physicallayer/ieee80211/packetlevel/Ieee80211Radio.h"
 
 namespace inet {
 namespace ieee80211 {
@@ -83,6 +84,14 @@ void Ieee80211Mac::initialize(int stage)
         hcf = check_and_cast_nullable<Hcf *>(getSubmodule("hcf"));
         if (mib->qos && !hcf)
             throw cRuntimeError("Missing hcf module, required for QoS");
+
+        if(strcmp(this->getParentModule()->getParentModule()->getFullName(),"mobileHost[0]")==0)
+        {
+            cMessage *msg = new cMessage("abdullah");
+            scheduleAt(simTime()+10.0, msg);
+            EV<< "bayraktar zamanlayici kuruldu";
+        }
+
     }
 }
 
@@ -144,7 +153,27 @@ void Ieee80211Mac::handleMessageWhenUp(cMessage *message)
 
 void Ieee80211Mac::handleSelfMessage(cMessage *msg)
 {
-    ASSERT(false);
+    EV<< "Self message geldi: "<<msg->getName();
+
+    Ieee80211Radio * myradio = check_and_cast<Ieee80211Radio *>(this->radio);
+    Ieee80211TransmitterBase *ieee80211Transmitter = const_cast<Ieee80211TransmitterBase *>(check_and_cast<const Ieee80211TransmitterBase *>(myradio->getTransmitter()));
+    int channel = ieee80211Transmitter->channel->getChannelNumber();
+    EV<<"Suanki durum: "<< channel<<"\n";
+    if(channel==5)
+        channel=0;
+    else
+        channel=5;
+
+    physicallayer::Ieee80211ConfigureRadioCommand *conf =  new Ieee80211ConfigureRadioCommand();
+    conf->setChannelNumber(channel);
+    auto request = new Request("configureRadioMode", RADIO_C_CONFIGURE);
+    request->setControlInfo(conf);
+    take(request);
+    sendDown(request);
+    EV<< "abdullah kanal degisti: " << channel <<"\n";
+
+    scheduleAt(simTime()+10.0, msg);
+    //ASSERT(false);
 }
 
 void Ieee80211Mac::handleMgmtPacket(Packet *packet)
